@@ -1,4 +1,4 @@
-# GlobalTags
+# GlobalNotes
 
 A bot for global tags and global (shared) user notes.
 
