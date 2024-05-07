@@ -1,0 +1,23 @@
+[tool.pyright]
+useLibraryCodeForTypes = true
+typeCheckingMode = "basic"
+pythonVersion = "3.11"
+strictListInference = true
+strictDictionaryInference = true
+strictSetInference = true
+strictParameterNoneValue = true
+reportMissingImports = "error"
+reportUnusedImport = "error"
+reportUnusedClass = "error"
+reportUnusedFunction = "error"
+reportUnusedVariable = "error"
+reportGeneralTypeIssues = "error"
+reportFunctionMemberAccess = "error"
+reportDuplicateImport = "error"
+reportUntypedFunctionDecorator = "error"
+reportUnnecessaryTypeIgnoreComment = "warning"
+reportShadowedImports = "none"
+
+[tool.black]
+line-length = 125
+skip-string-normalization = true

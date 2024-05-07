@@ -1,0 +1,6 @@
+asyncpg
+asyncpg-stubs
+
+git+https://github.com/Rapptz/discord.py
+git+https://github.com/DuckBot-Discord/ext.duck
+git+https://github.com/rapptz/discord-ext-menus
