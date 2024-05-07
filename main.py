@@ -68,9 +68,8 @@ class TagsBot(commands.Bot):
         print(data)
 
     async def setup_hook(self) -> None:
-        await self.load_extension('cogs.tags')
-        await self.load_extension('cogs.notes')
-        await self.load_extension('cogs.whitelist')
+        for extension in EXTENSIONS:
+            await self.load_extension(extension)
 
     @asynccontextmanager
     async def safe_connection(self, *, timeout: float = 10.0):

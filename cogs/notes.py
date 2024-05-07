@@ -7,9 +7,8 @@ from typing import TYPE_CHECKING
 import discord
 from discord import app_commands
 from discord.ext import menus
-from discord.ext.duck import webserver
+from discord.ext import commands
 
-from config import PORT
 
 from .utils.menus import ViewMenuPages
 
@@ -172,7 +171,7 @@ class AddNoteModal(discord.ui.Modal):
             await interaction.response.send_message("\N{WHITE HEAVY CHECK MARK}", ephemeral=True, delete_after=1)
 
 
-class Notes(webserver.WebserverCog, port=PORT):
+class Notes(commands.Cog):
     """For keeping track of the dumbasses"""
 
     def __init__(self, bot: TagsBot):
@@ -192,10 +191,6 @@ class Notes(webserver.WebserverCog, port=PORT):
         self.bot.tree.add_command(self.get_ctx_menu)
         self.bot.tree.add_command(self.add_ctx_menu)
         self.message_processing_lock = asyncio.Lock()
-
-    async def start(self, *, host: str = "localhost", port: int):
-        await super().start(host=host, port=port)
-        self.logger.info("done")
 
     async def cog_unload(self) -> None:
         await super().cog_unload()

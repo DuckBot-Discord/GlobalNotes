@@ -37,6 +37,7 @@ class OptOut(discord.ui.View):
 
 class DpyListener(webserver.WebserverCog, port=PORT):
     def __init__(self, bot: TagsBot):
+        super().__init__()
         self.bot = bot
         self.message_processing_lock = asyncio.Lock()
         self.bot.add_view(OptOut())
