@@ -1,18 +1,21 @@
 from __future__ import annotations
 
 import asyncio
+from re import Match
 from typing import TYPE_CHECKING, TypedDict
 
 import asyncpg
 import discord
 from aiohttp import web
 from discord.ext.duck import webserver
+from discord.ui.item import Item
 
 from config import PORT
 
 from .notes import notify_text
 
 if TYPE_CHECKING:
+    from .notes import Notes
     from main import TagsBot
 
 
@@ -22,12 +25,28 @@ class InHelpPayload(TypedDict):
     owner_id: int
 
 
-class OptOut(discord.ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
+class ViewNotes(discord.ui.DynamicItem, template=r"NOTES:(?P<id>\d+)"):
+    def __init__(self, user_id: int):
+        self.user_id = user_id
+        super().__init__(discord.ui.Button(label='View Notes', custom_id=f"NOTES:{user_id}"))
 
-    @discord.ui.button(label='Toggle notifications', custom_id='NOTIFS_TOGGLE')
-    async def opt_out(self, interaction: discord.Interaction[TagsBot], button: discord.ui.Button):
+    @classmethod
+    async def from_custom_id(cls, interaction: discord.Interaction, item: discord.ui.Button, match: Match[str]):
+        return cls(int(match.group('id')))
+
+    async def callback(self, interaction: discord.Interaction[TagsBot]):
+        cog: Notes | None = interaction.client.get_cog('Notes')  # type: ignore
+        if not cog:
+            return await interaction.response.send_message("Service currently unavailable.", ephemeral=True)
+        user = await interaction.client.fetch_user(self.user_id)
+        await cog.get_notes_impl(interaction, user)
+
+
+class ToggleNotifications(discord.ui.DynamicItem, template="NOTIFS_TOGGLE"):
+    def __init__(self):
+        super().__init__(discord.ui.Button(label='Toggle Notifications', custom_id='NOTIFS_TOGGLE'))
+
+    async def callback(self, interaction: discord.Interaction[TagsBot]):
         query = """INSERT INTO user_settings (user_id, notifications_enabled) VALUES ($1, FALSE) 
                     ON CONFLICT (user_id) DO UPDATE SET notifications_enabled = NOT user_settings.notifications_enabled
                     RETURNING notifications_enabled"""
@@ -35,12 +54,19 @@ class OptOut(discord.ui.View):
         await interaction.response.send_message(notify_text("You are %s receiving notifications.", current), ephemeral=True)
 
 
+class NotificationView(discord.ui.View):
+    def __init__(self, user_id: int):
+        super().__init__(timeout=None)
+        self.add_item(ToggleNotifications())
+        self.add_item(ViewNotes(user_id))
+
+
 class DpyListener(webserver.WebserverCog, port=PORT):
     def __init__(self, bot: TagsBot):
         super().__init__()
         self.bot = bot
         self.message_processing_lock = asyncio.Lock()
-        self.bot.add_view(OptOut())
+        self.bot.add_dynamic_items(ToggleNotifications, ViewNotes)
 
     @webserver.route('post', '/inhelp')
     async def on_dpy_help_thread_interact(self, request: web.Request):
@@ -87,8 +113,8 @@ class DpyListener(webserver.WebserverCog, port=PORT):
 
                         user = await self.bot.fetch_user(data['user_id'])
                         await user.send(
-                            f"Hey! User <@{data['owner_id']}> has notes set! (from <https://discord.com/channels/336642139381301249/{data['thread_id']}>).",
-                            view=OptOut(),
+                            f"Hey! User <@{data['owner_id']}> has notes set! From https://discord.com/channels/336642139381301249/{data['thread_id']}",
+                            view=NotificationView(data['owner_id']),
                         )
 
                     except asyncpg.UniqueViolationError:
