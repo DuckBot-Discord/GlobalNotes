@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from re import Match
-from typing import TYPE_CHECKING, TypedDict
+from typing import TYPE_CHECKING, TypedDict, Any
 
 import asyncpg
 import discord
@@ -53,6 +53,9 @@ class ToggleNotifications(discord.ui.DynamicItem, template="NOTIFS_TOGGLE"):
         current = await interaction.client.pool.fetchval(query, interaction.user.id)
         await interaction.response.send_message(notify_text("You are %s receiving notifications.", current), ephemeral=True)
 
+    @classmethod
+    async def from_custom_id(cls, *args: Any):
+        return cls()
 
 class NotificationView(discord.ui.View):
     def __init__(self, user_id: int):
